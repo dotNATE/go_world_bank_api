@@ -10,41 +10,6 @@ import (
 	"os"
 )
 
-type CountryInfoMeta struct {
-	Id       string
-	Iso2Code string
-	Value    string
-}
-
-type CountryInfo struct {
-	Id          string
-	Iso2Code    string
-	Name        string
-	Region      CountryInfoMeta
-	AdminRegion CountryInfoMeta
-	IncomeLevel CountryInfoMeta
-	LendingType CountryInfoMeta
-	CapitalCity string
-	Longitude   string
-	Latitude    string
-}
-
-type APIResponse struct {
-	PageInfo    map[string]int
-	CountryInfo []CountryInfo
-}
-
-func (resp *APIResponse) UnmarshalJSON(buf []byte) error {
-	tmp := []interface{}{&resp.PageInfo, &resp.CountryInfo}
-
-	err := json.Unmarshal(buf, &tmp)
-	if err != nil {
-		return nil
-	}
-
-	return nil
-}
-
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -68,8 +33,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error unmarshalling JSON: %s", err.Error())
 	}
-	data := tmp.CountryInfo[0]
+	if len(tmp.PageInfo.Message) > 0 {
+		log.Fatalf("Invalid country code. Please check your country code and try again.")
+	}
 
+	data := tmp.CountryInfo[0]
 	fmt.Printf("\nName: %s\n", data.Name)
 	fmt.Printf("Region: %s\n", data.Region.Value)
 	fmt.Printf("Capital City: %s\n", data.CapitalCity)
