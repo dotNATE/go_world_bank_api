@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -10,13 +9,20 @@ import (
 	"os"
 )
 
+func GetCountryCodeFromUser(s *bufio.Scanner) string {
+	fmt.Println("\nPlease enter a valid ISO country code...")
+	s.Scan()
+	return s.Text()
+}
+
+func GenerateAPIUrl(countryCode string) string {
+	return "http://api.worldbank.org/v2/country/" + countryCode + "?format=json"
+}
+
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
-
-	fmt.Println("\nPlease enter a valid ISO country code...")
-	scanner.Scan()
-	countryCode := scanner.Text()
-	url := "http://api.worldbank.org/v2/country/" + countryCode + "?format=json"
+	countryCode := GetCountryCodeFromUser(scanner)
+	url := GenerateAPIUrl(countryCode)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -28,19 +34,10 @@ func main() {
 		log.Fatalf("Error reading body of JSON response: %s", err.Error())
 	}
 
-	var tmp APIResponse
-	err = json.Unmarshal([]byte(body), &tmp)
+	data, err := HandleUnmarshall(body)
 	if err != nil {
-		log.Fatalf("Error unmarshalling JSON: %s", err.Error())
-	}
-	if len(tmp.PageInfo.Message) > 0 {
-		log.Fatalf("Invalid country code. Please check your country code and try again.")
+		log.Fatal(err)
 	}
 
-	data := tmp.CountryInfo[0]
-	fmt.Printf("\nName: %s\n", data.Name)
-	fmt.Printf("Region: %s\n", data.Region.Value)
-	fmt.Printf("Capital City: %s\n", data.CapitalCity)
-	fmt.Printf("Longitude: %s\n", data.Longitude)
-	fmt.Printf("Latitude: %s\n", data.Latitude)
+	data.CountryInfo[0].PrintData()
 }
